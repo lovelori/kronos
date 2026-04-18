@@ -15,11 +15,13 @@ INTERVAL = "4h"
 LOOKBACK = 400
 PRED_LEN = 6  # Predict 6 periods (24 hours)
 
-def fetch_binance_klines(symbol, interval, limit):
-    """Fetch candlestick data from Binance public API."""
-    url = "https://api.binance.com/api/v3/klines"
+def fetch_gateio_klines(symbol, interval, limit):
+    """Fetch candlestick data from Gate.io public API."""
+    # Gate.io uses format like BTC_USDT
+    gate_symbol = symbol.replace("USDT", "_USDT")
+    url = "https://api.gateio.ws/api/v4/spot/candlesticks"
     params = {
-        "symbol": symbol,
+        "currency_pair": gate_symbol,
         "interval": interval,
         "limit": limit
     }
@@ -27,19 +29,15 @@ def fetch_binance_klines(symbol, interval, limit):
     response.raise_for_status()
     data = response.json()
     
-    # Binance kline columns
-    columns = [
-        'timestamps', 'open', 'high', 'low', 'close', 
-        'volume', 'close_time', 'amount', 'trades', 
-        'taker_base', 'taker_quote', 'ignore'
-    ]
+    # Gate.io kline columns: [timestamp, volume, close, high, low, open, amount]
+    columns = ['timestamps', 'volume', 'close', 'high', 'low', 'open', 'amount']
     df = pd.DataFrame(data, columns=columns)
     
     # Ensure numerical types for Kronos
     for col in ['open', 'high', 'low', 'close', 'volume', 'amount']:
         df[col] = df[col].astype(float)
         
-    df['timestamps'] = pd.to_datetime(df['timestamps'], unit='ms')
+    df['timestamps'] = pd.to_datetime(df['timestamps'].astype(float), unit='s')
     return df
 
 def send_feishu_message(webhook_url, title, results):
@@ -87,7 +85,7 @@ def main():
     for symbol in SYMBOLS:
         print(f"Fetching and predicting for {symbol}...")
         try:
-            df = fetch_binance_klines(symbol, INTERVAL, LOOKBACK)
+            df = fetch_gateio_klines(symbol, INTERVAL, LOOKBACK)
             
             x_df = df[['open', 'high', 'low', 'close', 'volume', 'amount']].copy()
             x_timestamp = df['timestamps'].copy()
