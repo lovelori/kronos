@@ -29,8 +29,8 @@ def fetch_gateio_klines(symbol, interval, limit):
     response.raise_for_status()
     data = response.json()
     
-    # Gate.io kline columns: [timestamp, volume, close, high, low, open, amount]
-    columns = ['timestamps', 'volume', 'close', 'high', 'low', 'open', 'amount']
+    # Gate.io kline columns: [timestamp, volume, close, high, low, open, amount, window_closed]
+    columns = ['timestamps', 'volume', 'close', 'high', 'low', 'open', 'amount', 'window_closed']
     df = pd.DataFrame(data, columns=columns)
     
     # Ensure numerical types for Kronos
