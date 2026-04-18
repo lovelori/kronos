@@ -1,6 +1,10 @@
 name: Crypto Predict Alert
 
 on:
+  push:
+    branches:
+      - master
+      - main
   schedule:
     - cron: '0 */4 * * *'
   workflow_dispatch:
